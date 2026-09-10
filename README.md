@@ -1,309 +1,200 @@
-# EvalFlow - Hệ thống Quản lý Khảo sát Động
+<div align="center">
 
-## Tổng quan dự án
+# 🌟 EvalFlow
 
-Công nghệ sử dụng:
-- **Backend**: Node.js + Express.js + PostgreSQL (kiến trúc 3 lớp: Route → Controller → Service)
-- **Frontend**: React.js (Vite) + React Router v6 + Tailwind CSS v3 + Axios
+**Hệ thống Quản lý và Phân tích Khảo sát Động Toàn diện**
+
+*Một nền tảng doanh nghiệp linh hoạt giúp tạo, quản lý và phân tích các chiến dịch khảo sát, đánh giá hiệu suất với kiến trúc hiện đại và bảo mật.*
+
+[![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
+</div>
+
+<br />
+
+## 📖 Mục lục
+
+- [Tổng quan dự án](#-tổng-quan-dự-án)
+- [Kiến trúc & Công nghệ](#-kiến-trúc--công-nghệ)
+- [Tính năng nổi bật](#-tính-năng-nổi-bật)
+- [Hướng dẫn Cài đặt & Vận hành](#-hướng-dẫn-cài-đặt--vận-hành)
+  - [1. Thiết lập Cơ sở dữ liệu (PostgreSQL)](#1-thiết-lập-cơ-sở-dữ-liệu-postgresql)
+  - [2. Khởi chạy Backend](#2-khởi-chạy-backend)
+  - [3. Khởi chạy Frontend](#3-khởi-chạy-frontend)
+- [Tài khoản Thử nghiệm](#-tài-khoản-thử-nghiệm)
+- [Tài liệu API & Monitoring](#-tài-liệu-api--monitoring)
+- [Cấu trúc Dự án](#-cấu-trúc-dự-án)
+- [Xử lý Sự cố (Troubleshooting)](#-xử-lý-sự-cố-troubleshooting)
 
 ---
 
-## Bước 1: Chuẩn bị Cơ sở dữ liệu (PostgreSQL)
+## 🎯 Tổng quan dự án
 
-1. **Cài đặt PostgreSQL** (nếu chưa có):
-   - Tải về: https://www.postgresql.org/download/windows/
-   - Trong quá trình cài, nhớ ghi lại **password** cho user `postgres`.
+**EvalFlow** là một hệ thống phần mềm cấp doanh nghiệp được thiết kế để giải quyết bài toán quản lý các chiến dịch khảo sát và đánh giá (ví dụ: đánh giá giảng viên, đánh giá KPI nhân sự) một cách tự động và trực quan. 
 
-2. **Tạo CSDL mới** tên là `evalflow`:
-   - Mở `pgAdmin` hoặc `psql` và chạy:
-     ```sql
-     CREATE DATABASE evalflow;
-     ```
+Hệ thống cung cấp trải nghiệm liền mạch cho nhiều nhóm người dùng (Admin, Sinh viên, Giảng viên) với luồng dữ liệu (workflow) được kiểm soát chặt chẽ từ khâu xây dựng form khảo sát động cho đến khâu phân tích dữ liệu và xuất báo cáo tự động.
 
-3. **Chạy SQL tạo bảng và dữ liệu mẫu** — chọn **một trong 2 cách** sau:
+---
 
-   **Cách 1 (Nhanh nhất - chạy file .sql đã có sẵn):**
-   - Mở PowerShell và chạy lệnh sau (nhập password postgres khi được hỏi):
-     ```powershell
-     psql -U postgres -d evalflow -f "d:\DuAnHocViec\EvalFlow\backend\sql\001_init_tables_seed.sql"
-     ```
+## 🛠 Kiến trúc & Công nghệ
 
-   **Cách 2 (Copy-paste vào pgAdmin / psql Query Tool):**
-   ```sql
-   -- 1. Bảng ROLES
-   CREATE TABLE roles (
-       id SERIAL PRIMARY KEY,
-       role_name VARCHAR(50) NOT NULL UNIQUE
-   );
+Dự án áp dụng mô hình **Kiến trúc 3 lớp (3-Tier Architecture)** ở phía Backend (Route → Controller → Service) nhằm đảm bảo tính phân tách trách nhiệm (Separation of Concerns), dễ dàng mở rộng (scalability) và bảo trì (maintainability).
 
-   -- 2. Bảng USERS
-   CREATE TABLE users (
-       id SERIAL PRIMARY KEY,
-       role_id INT NOT NULL,
-       full_name VARCHAR(255) NOT NULL,
-       email VARCHAR(255) UNIQUE NOT NULL,
-       password_hash VARCHAR(255) NOT NULL,
-       department VARCHAR(255),
-       FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
-   );
+### Phân hệ Frontend (Client)
+- **Core Framework**: React.js 18 (Xây dựng thông qua Vite mang lại tốc độ HMR siêu tốc).
+- **Điều hướng (Routing)**: React Router v6.
+- **Giao diện (UI/UX)**: Áp dụng hệ thống thiết kế hiện đại với Tailwind CSS v3.
+- **Tương tác API**: Sử dụng Axios với Interceptors để tự động đính kèm và gia hạn Token.
 
-   -- 3. Bảng NOTIFICATIONS
-   CREATE TABLE notifications (
-       id SERIAL PRIMARY KEY,
-       user_id INT NOT NULL,
-       message TEXT NOT NULL,
-       action_link VARCHAR(500),
-       is_read BOOLEAN DEFAULT FALSE,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-   );
+### Phân hệ Backend (Server)
+- **Core Runtime**: Node.js môi trường bất đồng bộ (Non-blocking I/O).
+- **Web Framework**: Express.js tối ưu hóa xử lý RESTful API.
+- **Hệ quản trị CSDL**: PostgreSQL đảm bảo tính toàn vẹn dữ liệu chuẩn ACID.
+- **Bảo mật**: Cơ chế xác thực JSON Web Tokens (JWT) và mã hóa mật khẩu một chiều Bcrypt (Cost=10).
 
-   -- 4. Bảng SURVEYS
-   CREATE TABLE surveys (
-       id SERIAL PRIMARY KEY,
-       title VARCHAR(255) NOT NULL,
-       description TEXT,
-       theme_config JSONB DEFAULT '{}',
-       created_by INT NOT NULL,
-       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
-   );
+---
 
-   -- 5. Bảng SURVEY_CAMPAIGNS
-   CREATE TABLE survey_campaigns (
-       id SERIAL PRIMARY KEY,
-       survey_id INT NOT NULL,
-       name VARCHAR(255) NOT NULL,
-       start_date DATE NOT NULL,
-       end_date DATE NOT NULL,
-       is_active BOOLEAN DEFAULT TRUE,
-       FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE
-   );
+## ✨ Tính năng nổi bật
 
-   -- 6. Bảng SURVEY_ASSIGNMENTS
-   CREATE TABLE survey_assignments (
-       id SERIAL PRIMARY KEY,
-       campaign_id INT NOT NULL,
-       user_id INT NOT NULL,
-       status VARCHAR(50) DEFAULT 'Pending',
-       FOREIGN KEY (campaign_id) REFERENCES survey_campaigns(id) ON DELETE CASCADE,
-       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-   );
+- **Quản lý Form Động**: Admin có thể tạo ra các bảng câu hỏi với nhiều loại định dạng (Trắc nghiệm, Tự luận, Matrix...) mà không cần can thiệp vào mã nguồn.
+- **Tổ chức Chiến dịch**: Định cấu hình thời gian bắt đầu, kết thúc, đối tượng tham gia đánh giá và đối tượng được đánh giá.
+- **Đa vai trò & Phân quyền (RBAC)**: Giao diện và quyền hạn được thay đổi tương ứng theo Role (Quản trị viên, Người đánh giá, Người được đánh giá).
+- **Báo cáo & Phân tích Theo thời gian thực**: Trực quan hóa dữ liệu phản hồi, phát hiện các điểm bất thường (Anomaly detection) trong kết quả.
+- **Tích hợp Trợ lý AI Copilot**: Hỗ trợ tự động hóa trong việc đánh giá và tóm tắt phản hồi (nếu được cấu hình).
 
-   -- 7. Bảng QUESTIONS
-   CREATE TABLE questions (
-       id SERIAL PRIMARY KEY,
-       survey_id INT NOT NULL,
-       question_text TEXT NOT NULL,
-       type VARCHAR(50) NOT NULL,
-       is_required BOOLEAN DEFAULT TRUE,
-       order_index INT NOT NULL,
-       options JSONB DEFAULT '{}',
-       FOREIGN KEY (survey_id) REFERENCES surveys(id) ON DELETE CASCADE
-   );
+---
 
-   -- 8. Bảng RESPONSES
-   CREATE TABLE responses (
-       id SERIAL PRIMARY KEY,
-       campaign_id INT NOT NULL,
-       evaluator_id INT NOT NULL,
-       target_user_id INT,
-       context_reference VARCHAR(255),
-       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-       FOREIGN KEY (campaign_id) REFERENCES survey_campaigns(id) ON DELETE CASCADE,
-       FOREIGN KEY (evaluator_id) REFERENCES users(id) ON DELETE CASCADE,
-       FOREIGN KEY (target_user_id) REFERENCES users(id) ON DELETE SET NULL
-   );
+## 🚀 Hướng dẫn Cài đặt & Vận hành
 
-   -- 9. Bảng ANSWERS
-   CREATE TABLE answers (
-       id SERIAL PRIMARY KEY,
-       response_id INT NOT NULL,
-       question_id INT NOT NULL,
-       answer_value JSONB NOT NULL,
-       FOREIGN KEY (response_id) REFERENCES responses(id) ON DELETE CASCADE,
-       FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
-   );
+### 1. Thiết lập Cơ sở dữ liệu (PostgreSQL)
 
-   -- ===== DỮ LIỆU MẪU =====
-
-   INSERT INTO roles (role_name) VALUES ('Admin'), ('Sinh viên'), ('Giảng viên') ON CONFLICT DO NOTHING;
-
-   -- Mật khẩu cho tất cả tài khoản mẫu: MatKhau123
-   -- (password_hash được băm bằng bcrypt với cost=10 - đã xác minh hoạt động)
-   INSERT INTO users (role_id, full_name, email, password_hash, department) VALUES
-   (1, 'Quản trị viên', 'admin@evalflow.edu', '$2b$10$o473wGYc.FP.G41ueQC9S.5EuIK5IMDNgUbE6W1Ym0mViv7cvBpjK', 'Phòng CNTT'),
-   (2, 'Nguyễn Văn Sinh', 'sinh1@evalflow.edu', '$2b$10$o473wGYc.FP.G41ueQC9S.5EuIK5IMDNgUbE6W1Ym0mViv7cvBpjK', 'Công nghệ thông tin K17'),
-   (3, 'Trần Thị Giảng', 'giang1@evalflow.edu', '$2b$10$o473wGYc.FP.G41ueQC9S.5EuIK5IMDNgUbE6W1Ym0mViv7cvBpjK', 'Khoa CNTT')
-   ON CONFLICT (email) DO NOTHING;
+1. **Cài đặt PostgreSQL**: Tải về và cài đặt từ [trang chủ chính thức](https://www.postgresql.org/download/). Vui lòng ghi nhớ mật khẩu của user `postgres`.
+2. **Tạo Database**: Khởi tạo một cơ sở dữ liệu trống có tên `evalflow`.
+3. **Khởi tạo Schema & Dữ liệu mẫu**:
+   Mở Command Line (hoặc PowerShell) và chạy lệnh sau để tự động tạo toàn bộ bảng và dữ liệu:
+   ```bash
+   psql -U postgres -d evalflow -f "backend/sql/001_init_tables_seed.sql"
    ```
+   *(Hoặc bạn có thể copy nội dung file SQL này và chạy trực tiếp trong pgAdmin).*
 
----
+### 2. Khởi chạy Backend
 
-## Bước 2: Chạy Backend (port 3000)
+Mở Terminal tại thư mục gốc của dự án, di chuyển vào thư mục `backend` và thực hiện:
 
-Mở **Terminal / PowerShell** và chạy:
-
-```powershell
-cd d:\DuAnHocViec\EvalFlow\backend
-npm.cmd install        # (chạy 1 lần duy nhất nếu chưa cài dependencies)
+```bash
+cd backend
+npm install
 ```
 
-**Kiểm tra file `.env`** trong thư mục `backend/.env` (đã có sẵn), sửa lại nếu password PostgreSQL của bạn khác `postgres`:
-
-```
+**Cấu hình Môi trường:**
+Sao chép file `.env.example` thành `.env` và cập nhật cấu hình cho phù hợp với máy của bạn:
+```env
 PORT=3000
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=evalflow
 DB_USER=postgres
-DB_PASSWORD=postgres        <-- sửa theo mật khẩu postgres của bạn
-JWT_SECRET=evalflow_super_secret_key_please_change_in_production_2024
+DB_PASSWORD=YOUR_POSTGRES_PASSWORD
+JWT_SECRET=your_secure_random_jwt_string_here
 JWT_EXPIRES_IN=7d
 ```
 
-**Khởi động Backend:**
-
-```powershell
-npm.cmd start
-```
-
-→ Thành công sẽ hiển thị:
-```
-Database connected successfully
-Server is running on port 3000
-```
-
-**Kiểm tra nhanh & Tra cứu Backend API:**
-- **Dashboard Explorer giao diện trực quan:** Mở trình duyệt truy cập [http://localhost:3000/api/health](http://localhost:3000/api/health) để xem Live Health Dashboard, Uptime, lượt gọi API thực tế và bảng tra cứu đầy đủ 44 API Endpoints.
-- **Danh mục API dạng JSON:** Mở [http://localhost:3000/api/routes](http://localhost:3000/api/routes) để xem toàn bộ danh mục API phân loại theo 11 nhóm tính năng.
-**Đường dẫn truy cập Swagger UI: http://localhost:3000/api-docs**
-**http://localhost:3000/api-docs/#/Surveys**
----
-
-## Bước 3: Chạy Frontend (port 5173)
-
-Mở **Terminal / PowerShell KHÁC** (không tắt terminal chạy Backend) và chạy:
-
-```powershell
-cd d:\DuAnHocViec\EvalFlow\frontend
-npm.cmd install        # (chạy 1 lần duy nhất nếu chưa cài)
-npm.cmd run dev
-```
-
-→ Thành công sẽ hiển thị:
-```
-  ➜  Local:   http://localhost:5173/
-```
-
----
-
-## Bước 4: Kiểm tra đăng nhập
-
-1. Mở trình duyệt: **http://localhost:5173/login**
-2. Sử dụng một trong các tài khoản mẫu dưới đây (mật khẩu: **`MatKhau123`**):
-
-   | Email | Vai trò | Chuyển hướng sau login |
-   |-------|---------|----------------------|
-   | `admin@evalflow.edu` | Admin | `/admin` |
-   | `sinh1@evalflow.edu` | Sinh viên | `/` |
-   | `giang1@evalflow.edu` | Giảng viên | `/` |
-
-3. Nhập Email + `MatKhau123` → nhấn **Đăng nhập**:
-   - Thành công sẽ tự động chuyển hướng
-   - Token được lưu vào `localStorage` (2 key: `evalflow_token` và `evalflow_user`)
-   - Sai thông tin sẽ hiện ô lỗi màu đỏ dưới form
-
-4. Kiểm tra API `/api/auth/login` trực tiếp (optional):
-
-   ```powershell
-   Invoke-RestMethod -Uri "http://localhost:3000/api/auth/login" -Method POST `
-     -ContentType "application/json" `
-     -Body '{"email":"admin@evalflow.edu","password":"MatKhau123"}'
-   ```
-
-   Kết quả trả về đúng format chuẩn:
-   ```json
-   { "success": true, "message": "Đăng nhập thành công", "data": { "token": "...", "user": {...} } }
-   ```
-
----
-
-## Cấu trúc thư mục chính
-
-```
-EvalFlow/
-├── backend/
-│   ├── server.js                 # Entry point Express
-│   ├── config/
-│   │   └── db.js                 # Kết nối PostgreSQL Pool
-│   ├── routes/
-│   │   └── auth.route.js         # POST /api/auth/login
-│   ├── controllers/
-│   │   └── auth.controller.js    # Xử lý Request/Response (try/catch)
-│   ├── services/
-│   │   └── auth.service.js       # Logic nghiệp vụ (SQL, bcrypt, JWT)
-│   ├── sql/
-│   │   └── 001_init_tables_seed.sql  # Script tạo 9 bảng + seed data mẫu
-│   ├── .env                      # Biến môi trường DB + JWT
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx               # React Router routes
-│   │   ├── api/
-│   │   │   ├── axiosClient.js    # Axios trung tâm (Interceptors + Token)
-│   │   │   └── auth.api.js       # loginApi() gọi qua axiosClient
-│   │   ├── utils/
-│   │   │   └── auth.utils.js     # saveAuth/getToken/clearAuth (localStorage)
-│   │   └── pages/
-│   │       └── Login.jsx         # UI trang Đăng nhập
-│   ├── vite.config.js            # Proxy /api -> localhost:3000
-│   ├── tailwind.config.js
-│   └── postcss.config.js
-└── docs/
-    ├── tasks.md                  # Lộ trình phát triển
-    ├── database-schema.md        # Schema CSDL
-    └── rules.cursorrules         # Quy tắc code
-```
-
----
-
-## Lệnh hữu ích
-
-| Công việc | Lệnh (chạy trong thư mục backend/ hoặc frontend/) |
-|----------|-------------------------------------------------|
-| Chạy Backend production mode | `cd backend ; npm.cmd start` |
-| Chạy Backend watch mode | `cd backend ; npm.cmd run dev` |
-| Chạy Frontend dev server | `cd frontend ; npm.cmd run dev` |
-| Build Frontend ra `dist/` | `cd frontend ; npm.cmd run build` |
-| Lint Frontend (oxlint) | `cd frontend ; npm.cmd run lint` |
-
----
-
-## Troubleshooting (Lỗi thường gặp)
-
-❌ **Lỗi `Database connection error` / `password authentication failed`**:
-→ Kiểm tra lại `DB_USER` và `DB_PASSWORD` trong file `backend/.env` xem có khớp với tài khoản PostgreSQL của bạn không.
-
-❌ **Lỗi `relation "users" does not exist`**:
-→ Bạn chưa chạy SQL tạo bảng ở Bước 1. Hãy tạo CSDL `evalflow` và chạy toàn bộ script SQL tạo bảng.
-
-❌ **Đăng nhập với `MatKhau123` báo "Thông tin đăng nhập không hợp lệ"**:
-→ Dữ liệu mẫu chưa được insert vào bảng users/roles. Chạy đoạn `INSERT INTO roles` và `INSERT INTO users` trong script SQL ở Bước 1.
-
-❌ **Frontend báo lỗi Network Error khi đăng nhập**:
-→ Đảm bảo Backend đang chạy ở port 3000 trước. Vite đã cấu hình proxy tự động.
-
-## Cách dừng và khởi động lại Backend (Cổng 3000)
-```powershell
-# 1. Dừng / Giải phóng Cổng 3000 (nếu bị lỗi EADDRINUSE)
-npx kill-port 3000
-
-
-# 2. Hoặc lệnh dừng tất cả các tiến trình Node đang chạy ngầm:
-Get-Process -Name node | Stop-Process -Force
-
-# 3. Khởi động lại Server Backend
-cd d:\DuAnHocViec\EvalFlow\backend
+**Khởi động Server:**
+```bash
 npm run dev
 ```
+*(Nếu thành công, terminal sẽ hiển thị dòng chữ `Database connected successfully` và `Server is running on port 3000`)*.
+
+### 3. Khởi chạy Frontend
+
+Mở một cửa sổ Terminal mới, di chuyển vào thư mục `frontend`:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*(Hệ thống sẽ cung cấp cho bạn một đường link Localhost, ví dụ: `http://localhost:5173/` để truy cập vào ứng dụng).*
+
+---
+
+## 🔑 Tài khoản Thử nghiệm
+
+Sau khi khởi chạy ứng dụng, bạn có thể truy cập vào **http://localhost:5173/login** để trải nghiệm với các tài khoản được cấp sẵn (Mật khẩu mặc định cho tất cả là: **`MatKhau123`**):
+
+| Chức vụ / Vai trò | Tên đăng nhập (Email) | Chuyển hướng sau đăng nhập |
+| :--- | :--- | :--- |
+| 🛡 **Quản trị viên (Admin)** | `admin@evalflow.edu` | `/admin` (Trang quản trị toàn diện) |
+| 🎓 **Sinh viên (Người đánh giá)** | `sinh1@evalflow.edu` | `/` (Trang danh sách chiến dịch) |
+| 👨‍🏫 **Giảng viên (Được đánh giá)** | `giang1@evalflow.edu` | `/` (Trang xem kết quả/phản hồi) |
+
+---
+
+## 📡 Tài liệu API & Monitoring
+
+EvalFlow cung cấp hệ thống theo dõi và tài liệu API tự động hoàn chỉnh, đáp ứng tiêu chuẩn của các hệ thống doanh nghiệp:
+
+- **Swagger UI API Documentation**: Truy cập `http://localhost:3000/api-docs` để xem tài liệu tương tác cho toàn bộ 40+ endpoints. Bạn có thể test trực tiếp API từ đây.
+- **Live Health Dashboard**: Truy cập `http://localhost:3000/api/health` để xem trạng thái thời gian thực của Server (Uptime, Ram Usage, Database Latency).
+- **JSON Routes Registry**: Khám phá danh mục API phân rã theo nhóm tính năng tại `http://localhost:3000/api/routes`.
+
+---
+
+## 📂 Cấu trúc Dự án
+
+Dự án được tổ chức theo cấu trúc module rõ ràng để dễ dàng mở rộng:
+
+```text
+EvalFlow/
+├── backend/                  # RESTful API Server
+│   ├── config/               # Cấu hình hệ thống (Database Connection)
+│   ├── controllers/          # Nhận Request, trả Response (Catch errors)
+│   ├── middlewares/          # Xử lý JWT Auth, Phân quyền, Uploads
+│   ├── routes/               # Định tuyến API Endpoints
+│   ├── services/             # Business Logic (Tương tác CSDL)
+│   ├── sql/                  # Scripts Migration & Seeding
+│   └── server.js             # Entry Point của Backend
+│
+├── frontend/                 # Client Application
+│   ├── public/               # Static assets
+│   ├── src/
+│   │   ├── api/              # Axios instance & API Service mappers
+│   │   ├── components/       # Các React components dùng chung (UI kit)
+│   │   ├── pages/            # View/Màn hình chính theo từng Route
+│   │   ├── utils/            # Helper functions (Format date, Auth Utils)
+│   │   └── App.jsx           # App Routing Component
+│   └── vite.config.js        # Cấu hình Build & Dev Proxy
+│
+└── docs/                     # Tài liệu thiết kế hệ thống
+    ├── database-schema.md    # Mô tả chi tiết cấu trúc Database
+    └── data-flow.md          # Luồng dữ liệu của hệ thống
+```
+
+---
+
+## 🛠 Xử lý Sự cố (Troubleshooting)
+
+**1. Lỗi `Database connection error` hoặc `password authentication failed`**
+- Nguyên nhân: Sai tài khoản/mật khẩu kết nối Database.
+- Khắc phục: Kiểm tra kỹ lại các biến `DB_USER` và `DB_PASSWORD` trong file `backend/.env`.
+
+**2. Lỗi `relation "users" does not exist`**
+- Nguyên nhân: Bạn đã tạo Database nhưng quên chạy file SQL tạo bảng.
+- Khắc phục: Chạy lại lệnh tạo bảng và import dữ liệu ở Bước 1.
+
+**3. Đăng nhập báo "Thông tin đăng nhập không hợp lệ" mặc dù nhập đúng `MatKhau123`**
+- Nguyên nhân: Thiếu dữ liệu mẫu.
+- Khắc phục: Đảm bảo bạn đã chạy đầy đủ file `001_init_tables_seed.sql`.
+
+**4. Khởi động Backend báo lỗi `EADDRINUSE: address already in use :::3000`**
+- Nguyên nhân: Cổng 3000 đã bị chiếm dụng bởi một tiến trình khác.
+- Khắc phục: Mở PowerShell và chạy `npx kill-port 3000`, sau đó khởi động lại bằng `npm run dev`.
+
+---
+<div align="center">
+  <i>Được thiết kế và phát triển với ❤️ — EvalFlow Project</i>
+</div>

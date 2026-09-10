@@ -1,0 +1,28 @@
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+.env.*.local
+
+# Build outputs
+frontend/dist/
+dist/
+build/
+
+# User uploads and runtime files
+backend/uploads/
+logs/
+*.log
+
+# Editor and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.cursorrules
+
+# Test data files (Bỏ comment nếu bạn muốn đưa lên GitHub)
+# *.xlsx
+# *.docx
+# *.csv
